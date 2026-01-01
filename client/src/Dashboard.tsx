@@ -1,7 +1,7 @@
 import { useQuery } from '@tanstack/react-query';
 import { fetchBatches } from './api';
 import { Box, Typography } from '@mui/material';
-import { CalendarView } from './CalendarView';
+import { CalendarView } from './components/CalendarView';
 
 interface Props {
     onEditBatch: (batch: any) => void;
