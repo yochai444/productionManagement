@@ -8,7 +8,10 @@ import { MongoClient, Db } from 'mongodb';
       provide: 'DATABASE_CONNECTION',
       useFactory: async (): Promise<Db> => {
         try {
-          const uri = process.env.MONGODB_URI || "mongodb+srv://admin1:1234@cluster0.pcimwaf.mongodb.net/?appName=Cluster0";
+          const uri = process.env.MONGODB_URI;
+          if (!uri) {
+            throw new Error('MONGODB_URI environment variable is not defined');
+          }
           const client = await MongoClient.connect(uri);
           return client.db('production-management');
         } catch (e) {
