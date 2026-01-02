@@ -17,9 +17,16 @@ interface Props {
 
 export function CreateBatchForm({ open, onClose, initialData }: Props) {
     const queryClient = useQueryClient();
+    const todayStr = new Date().toISOString().split('T')[0];
     const formSchema = createBatchSchema.extend({
-        deadline: z.string().min(1, "End Date is required"),
-        startDate: z.string().optional(),
+        deadline: z.string().min(1, "End Date is required")
+            .refine(date => new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+                message: "Deadline cannot be in the past"
+            }),
+        startDate: z.string().optional()
+            .refine(date => !date || new Date(date) >= new Date(new Date().setHours(0, 0, 0, 0)), {
+                message: "Start Date cannot be in the past"
+            }),
     });
 
     type LocalFormType = z.infer<typeof formSchema>;
@@ -32,8 +39,9 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
             quantity: p.quantity
         })) ?? [{ name: '', quantity: 1 }],
         priority: initialData?.priority ?? 1,
-        startDate: initialData?.startDate?.slice(0, 16) ?? '',
-        deadline: initialData?.deadline?.slice(0, 16) ?? '',
+        // Take just the date part (YYYY-MM-DD)
+        startDate: initialData?.startDate ? initialData.startDate.split('T')[0] : '',
+        deadline: initialData?.deadline ? initialData.deadline.split('T')[0] : '',
     };
 
     const { register, control, handleSubmit, formState: { errors }, reset } = useForm<LocalFormType>({
@@ -55,6 +63,10 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
     const onSubmit = (data: LocalFormType) => {
         const payload: ApiFormType = {
             ...data,
+            // Ensure we send a valid date string (iso) but it's fine if the server just takes it as is 
+            // or we add a time text. The server usually expects a Date object or ISO string.
+            // Let's force it to be a specific time if needed, or just the date string might work if
+            // the server constructor new Date(string) handles YYYY-MM-DD correctly (it usually does as UTC).
             startDate: data.startDate ? new Date(data.startDate).toISOString() : undefined,
             deadline: new Date(data.deadline).toISOString(),
         };
@@ -164,44 +176,66 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
                         />
 
                         <TextField
-                            type="datetime-local"
+                            type="date"
                             label="Start Date (Optional)"
                             InputLabelProps={{ shrink: true }}
                             {...register('startDate')}
                             error={!!errors.startDate}
                             helperText={errors.startDate?.message}
+                            inputProps={{ min: todayStr }}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <IconButton onClick={(e) => {
-                                            const input = (e.target as HTMLElement).closest('.MuiFormControl-root')?.querySelector('input');
-                                            input?.showPicker();
-                                        }}>
+                                        <IconButton
+                                            edge="end"
+                                            onClick={(e) => {
+                                                const input = e.currentTarget.closest('.MuiFormControl-root')?.querySelector('input');
+                                                if (input && 'showPicker' in input) {
+                                                    (input as any).showPicker();
+                                                }
+                                            }}
+                                        >
                                             <CalendarTodayIcon />
                                         </IconButton>
                                     </InputAdornment>
                                 ),
                             }}
+                            sx={{
+                                '& input::-webkit-calendar-picker-indicator': {
+                                    display: 'none', // Hide native indicator since we have a custom button
+                                }
+                            }}
                         />
 
                         <TextField
-                            type="datetime-local"
+                            type="date"
                             label="End Date"
                             InputLabelProps={{ shrink: true }}
                             {...register('deadline')}
                             error={!!errors.deadline}
                             helperText={errors.deadline?.message}
+                            inputProps={{ min: todayStr }}
                             InputProps={{
                                 endAdornment: (
                                     <InputAdornment position="end">
-                                        <IconButton onClick={(e) => {
-                                            const input = (e.target as HTMLElement).closest('.MuiFormControl-root')?.querySelector('input');
-                                            input?.showPicker();
-                                        }}>
+                                        <IconButton
+                                            edge="end"
+                                            onClick={(e) => {
+                                                const input = e.currentTarget.closest('.MuiFormControl-root')?.querySelector('input');
+                                                if (input && 'showPicker' in input) {
+                                                    (input as any).showPicker();
+                                                }
+                                            }}
+                                        >
                                             <CalendarTodayIcon />
                                         </IconButton>
                                     </InputAdornment>
                                 ),
+                            }}
+                            sx={{
+                                '& input::-webkit-calendar-picker-indicator': {
+                                    display: 'none',
+                                }
                             }}
                         />
                     </Box>

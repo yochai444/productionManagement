@@ -56,6 +56,8 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                         return b.schedule?.date && isSameDay(new Date(b.schedule.date), day);
                     });
                     const isCurrentMonth = isSameMonth(day, monthStart);
+                    const isPast = day < new Date(new Date().setHours(0, 0, 0, 0)); // Strictly before today (ignoring time)
+                    const isTodayDate = isToday(day);
 
                     return (
                         <Box
@@ -65,7 +67,7 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                                 minHeight: 100,
                                 border: '1px solid #e0e0e0',
                                 p: 1,
-                                bgcolor: isCurrentMonth ? 'background.paper' : '#f5f5f5',
+                                bgcolor: isTodayDate ? '#fff3e0' : (isPast ? '#e8f5e9' : (isCurrentMonth ? 'background.paper' : '#f5f5f5')), // Orangeish for today, Green for past
                                 opacity: isCurrentMonth ? 1 : 0.6,
                                 position: 'relative',
                                 cursor: 'pointer',
@@ -75,8 +77,8 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                             <Typography
                                 variant="caption"
                                 sx={{
-                                    fontWeight: isToday(day) ? 'bold' : 'normal',
-                                    color: isToday(day) ? 'primary.main' : 'text.primary',
+                                    fontWeight: isTodayDate ? 'bold' : 'normal',
+                                    color: isTodayDate ? 'primary.main' : 'text.primary',
                                     display: 'block',
                                     mb: 0.5
                                 }}
@@ -95,12 +97,14 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                                         }
                                     }
 
+                                    const isChipPast = day < new Date(new Date().setHours(0, 0, 0, 0));
+
                                     return (
                                         <Chip
                                             key={batch._id}
                                             label={label}
                                             size="small"
-                                            color={batch.priority >= 4 ? 'error' : 'primary'}
+                                            color={isChipPast ? 'success' : (batch.priority >= 4 ? 'error' : 'primary')}
                                             onClick={(e) => {
                                                 e.stopPropagation();
                                                 onBatchClick && onBatchClick(batch);
@@ -110,7 +114,9 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                                                 py: 0.5,
                                                 fontSize: '0.65rem',
                                                 '& .MuiChip-label': { px: 0.5, whiteSpace: 'normal', display: 'block' },
-                                                cursor: 'pointer'
+                                                cursor: 'pointer',
+                                                bgcolor: isChipPast ? 'success.light' : undefined, // Optional: customize shade if 'success' is too dark
+                                                color: isChipPast ? 'success.contrastText' : undefined
                                             }}
                                         />
                                     );
@@ -138,11 +144,28 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
                                 if (seg) {
                                     const header = `${batch.projectName}: ${batch.name} | עובדים: ${seg.workerCount}`;
 
-                                    const breakdown = seg.completedProcedures ? seg.completedProcedures.map((p, idx) => (
-                                        <Typography key={idx} variant="body2" display="block">
-                                            {p.name}: {p.quantity} | עובדים: {p.workerCount ?? 0}
-                                        </Typography>
-                                    )) : null;
+                                    const breakdown = seg.completedProcedures ? seg.completedProcedures.map((p, idx) => {
+                                        // Calculate remaining quantity
+                                        const procedureTotal = batch.procedures.find(bp => bp.name === p.name)?.quantity || 0;
+
+                                        // Sum of ALL production for this procedure in segments BEFORE or ON this day
+                                        // Note: If we want "Remaining to produce", it is Total - ProducedSoFar.
+                                        let producedSoFar = 0;
+                                        batch.segments?.forEach(s => {
+                                            if (new Date(s.date) <= selectedDay) {
+                                                const producedInSeg = s.completedProcedures?.find(cp => cp.name === p.name)?.quantity || 0;
+                                                producedSoFar += producedInSeg;
+                                            }
+                                        });
+
+                                        const remaining = Math.max(0, procedureTotal - producedSoFar);
+
+                                        return (
+                                            <Typography key={idx} variant="body2" display="block">
+                                                {p.name}: {p.quantity} | עובדים: {p.workerCount ?? 0} | נותר: {remaining}
+                                            </Typography>
+                                        );
+                                    }) : null;
 
                                     return (
                                         <Box key={batch._id || index}>

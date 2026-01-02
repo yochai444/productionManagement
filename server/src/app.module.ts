@@ -9,6 +9,7 @@ import { ProductionModule } from './production/production.module';
   imports: [
     ConfigModule.forRoot({
       isGlobal: true,
+      envFilePath: '.env',
     }),
     DatabaseModule,
     ProductionModule,
