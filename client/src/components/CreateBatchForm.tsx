@@ -8,6 +8,7 @@ import CalendarTodayIcon from '@mui/icons-material/CalendarToday';
 import { z } from 'zod';
 import { createBatch, createBatchSchema, updateBatch, deleteBatch } from '../api';
 import type { CreateBatchForm as ApiFormType, Batch } from '../api';
+import { PROCEDURE_LABELS } from '../constants/procedures';
 
 interface Props {
     open: boolean;
@@ -37,7 +38,7 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
         procedures: initialData?.procedures?.map(p => ({
             name: p.name,
             quantity: p.quantity
-        })) ?? [{ name: '', quantity: 1 }],
+        })) ?? [{ name: 'sliding_window_monoblock', quantity: 1 }],
         priority: initialData?.priority ?? 1,
         // Take just the date part (YYYY-MM-DD)
         startDate: initialData?.startDate ? initialData.startDate.split('T')[0] : '',
@@ -142,9 +143,11 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
                                     helperText={errors.procedures?.[index]?.name?.message}
                                     sx={{ flex: 2 }}
                                 >
-                                    <MenuItem value="door_assembly">Door Assembly (1/day)</MenuItem>
-                                    <MenuItem value="window_frame">Window Frame (2/day)</MenuItem>
-                                    <MenuItem value="painting">Painting (5/day)</MenuItem>
+                                    {Object.entries(PROCEDURE_LABELS).map(([key, label]) => (
+                                        <MenuItem key={key} value={key}>
+                                            {label}
+                                        </MenuItem>
+                                    ))}
                                 </TextField>
 
                                 <TextField
@@ -162,7 +165,7 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
                                 </IconButton>
                             </Box>
                         ))}
-                        <Button onClick={() => append({ name: '', quantity: 1 })} variant="outlined">
+                        <Button onClick={() => append({ name: 'sliding_window_monoblock', quantity: 1 })} variant="outlined">
                             Add Procedure
                         </Button>
 
@@ -247,6 +250,6 @@ export function CreateBatchForm({ open, onClose, initialData }: Props) {
                     </Button>
                 </DialogActions>
             </form>
-        </Dialog>
+        </Dialog >
     );
 }

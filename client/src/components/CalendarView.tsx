@@ -5,6 +5,7 @@ import { Box, Typography, Paper, Chip, IconButton, Dialog, DialogTitle, DialogCo
 import ArrowBackIcon from '@mui/icons-material/ArrowBack';
 import ArrowForwardIcon from '@mui/icons-material/ArrowForward';
 import type { Batch } from '../api';
+import { PROCEDURE_LABELS } from '../constants/procedures';
 
 interface CalendarViewProps {
     batches: Batch[];
@@ -162,7 +163,7 @@ export function CalendarView({ batches, onBatchClick }: CalendarViewProps) {
 
                                         return (
                                             <Typography key={idx} variant="body2" display="block">
-                                                {p.name}: {p.quantity} | עובדים: {p.workerCount ?? 0} | נותר: {remaining}
+                                                {PROCEDURE_LABELS[p.name] || p.name}: {p.quantity} | עובדים: {p.workerCount ?? 0} | נותר: {remaining}
                                             </Typography>
                                         );
                                     }) : null;

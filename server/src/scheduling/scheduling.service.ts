@@ -6,9 +6,15 @@ export class SchedulingService {
     private readonly TOTAL_WORKERS = 30;
 
     private readonly EFFICIENCY_RATES: Record<string, number> = {
-        'door_assembly': 1,
-        'window_frame': 2,
-        'painting': 5,
+        'sliding_window_monoblock': 2,
+        'opening_window_monoblock': 2,
+        'sliding_door_monoblock': 1,
+        'sliding_door': 1,
+        'sliding_window': 3,
+        'tilt_window': 3,
+        'mamad_shutter': 5,
+        'opening_door': 2,
+        'opening_door_screen_box': 0.333, // 2 units per 6 workers
     };
 
     scheduleBatches(
